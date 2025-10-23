@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Don't forget to import useEffect!
 import { worktimeApi } from "../services/worktimeAPI";
-
 
 export default function Content({ employees, onEmployeeDeleted }) { 
   const shiftTimes = {
@@ -9,14 +8,88 @@ export default function Content({ employees, onEmployeeDeleted }) {
     3: { start: "16:00", end: "00:00" }  
   };
 
-  // State for selected shifts
+  // Load from localStorage on component mount
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+      return defaultValue;
+    }
+  };
+
+  // Save to localStorage
+  const saveToLocalStorage = (key, value) => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error);
+    }
+  };
+
+  // State for selected shifts with localStorage persistence
   const [selectedShifts, setSelectedShifts] = useState(() => {
-    const initialShifts = {};
-    employees.forEach(emp => {
-      initialShifts[emp.num] = ""; // Initialize with no selection
-    });
-    return initialShifts;
+    return loadFromLocalStorage('selectedShifts', {});
   });
+
+  // State for employee times with localStorage persistence - REMOVE THE DUPLICATE ONE!
+  const [employeeTimes, setEmployeeTimes] = useState(() => {
+    const defaultTimes = {};
+    employees.forEach(emp => {
+      defaultTimes[emp.num] = {
+        clockIn: "00:00",
+        clockOut: "00:00",
+        workTimeId: null
+      };
+    });
+    
+    const savedTimes = loadFromLocalStorage('employeeTimes', {});
+    
+    // Merge saved times with default structure
+    return {
+      ...defaultTimes,
+      ...savedTimes
+    };
+  });
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    saveToLocalStorage('selectedShifts', selectedShifts);
+  }, [selectedShifts]);
+
+  useEffect(() => {
+    saveToLocalStorage('employeeTimes', employeeTimes);
+  }, [employeeTimes]);
+
+  // Update employeeTimes when employees prop changes
+  useEffect(() => {
+    setEmployeeTimes(prev => {
+      const updatedTimes = { ...prev };
+      let hasChanges = false;
+
+      employees.forEach(emp => {
+        if (!updatedTimes[emp.num]) {
+          updatedTimes[emp.num] = {
+            clockIn: "00:00",
+            clockOut: "00:00",
+            workTimeId: null
+          };
+          hasChanges = true;
+        }
+      });
+
+      // Remove employees that are no longer in the list
+      Object.keys(updatedTimes).forEach(empNum => {
+        if (!employees.find(emp => emp.num.toString() === empNum)) {
+          delete updatedTimes[empNum];
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? updatedTimes : prev;
+    });
+  }, [employees]);
 
   // Calculate if employee is late
   const calculateLateMinutes = (clockIn, shiftNumber) => {
@@ -97,21 +170,19 @@ export default function Content({ employees, onEmployeeDeleted }) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Initialize state with "00:00" for all employees
-  const [employeeTimes, setEmployeeTimes] = useState(() => {
-    const initialTimes = {};
-    employees.forEach(emp => {
-      initialTimes[emp.num] = {
-        clockIn: "00:00",
-        clockOut: "00:00",
-        workTimeId: null
-      };
-    });
-    return initialTimes;
-  });
+  // REMOVE THIS DUPLICATE STATE DECLARATION!
+  // const [employeeTimes, setEmployeeTimes] = useState(() => {
+  //   const initialTimes = {};
+  //   employees.forEach(emp => {
+  //     initialTimes[emp.num] = {
+  //       clockIn: "00:00",
+  //       clockOut: "00:00",
+  //       workTimeId: null
+  //     };
+  //   });
+  //   return initialTimes;
+  // });
 
-
-  
   // Function to get current time in HH:MM format
   const getCurrentTime = () => {
     const now = new Date();
@@ -197,6 +268,8 @@ export default function Content({ employees, onEmployeeDeleted }) {
       ...employeeTimes[employeeNum],
       clockOut: currentTime
     };
+
+   
     
     setEmployeeTimes(prev => ({
       ...prev,
@@ -208,6 +281,24 @@ export default function Content({ employees, onEmployeeDeleted }) {
     }
   };
 
+    // Add a function to clear all data (optional, for testing)
+  const clearLocalData = () => {
+    localStorage.removeItem('employeeTimes');
+    localStorage.removeItem('selectedShifts');
+    setEmployeeTimes(prev => {
+      const resetTimes = {};
+      employees.forEach(emp => {
+        resetTimes[emp.num] = {
+          clockIn: "00:00",
+          clockOut: "00:00",
+          workTimeId: null
+        };
+      });
+      return resetTimes;
+    });
+    setSelectedShifts({});
+    alert('Local data cleared!');
+  };
   // Get current time for an employee
   const getEmployeeTime = (employeeNum, type) => {
     return employeeTimes[employeeNum]?.[type] || "00:00";
@@ -243,6 +334,21 @@ export default function Content({ employees, onEmployeeDeleted }) {
             }}
         >
             Enter clock in/out and shift number: 
+            <button 
+              onClick={clearLocalData}
+              style={{
+                marginLeft: '20px',
+                padding: '5px 10px',
+                backgroundColor: '#ff6b6b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              Clear Local Data
+            </button>
         </div>
 
         <div>
