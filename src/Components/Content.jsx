@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; // Don't forget to import useEffect!
+import { useState, useEffect } from "react"; 
 import { worktimeApi } from "../services/worktimeAPI";
 
 export default function Content({ employees, onEmployeeDeleted }) { 
@@ -347,7 +347,7 @@ export default function Content({ employees, onEmployeeDeleted }) {
                 fontSize: '12px'
               }}
             >
-              Clear Local Data
+            New Day!
             </button>
         </div>
 

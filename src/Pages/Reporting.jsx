@@ -19,28 +19,22 @@ export default function Reporting(){
       setLoading(true);
       setError(null);
       
-      console.log('Fetching data for date:', date);
       const worktimeData = await worktimeApi.getWorkTimesByDate(date);
-      console.log('Raw worktime data:', worktimeData);
       
-      // Transform worktime data
-      const transformedEmployees = worktimeData.map(record => {
-        console.log('Processing record:', record);
-        console.log('late_minutes type:', typeof record.late_minutes, 'value:', record.late_minutes);
-        console.log('overtime_minutes type:', typeof record.overtime_minutes, 'value:', record.overtime_minutes);
-        console.log('work_hours type:', typeof record.work_hours, 'value:', record.work_hours);
-        
-        return {
-          num: record.emp_id,
-          name: record.emp_name || `Employee ${record.emp_id}`,
-          shift: record.shift_id || 0,
-          delay: formatMinutesToTime(record.late_minutes || 0),
-          overtime: formatMinutesToTime(record.overtime_minutes || 0),
-          hours: formatHoursToTime(record.work_hours || 0)
-        };
-      });
+      if (!worktimeData || worktimeData.length === 0) {
+        throw new Error('No records found');
+      }
+
+      // Direct mapping - data is already in HH:MM format
+      const transformedEmployees = worktimeData.map(record => ({
+        num: record.emp_id,
+        name: record.emp_name || `Employee ${record.emp_id}`,
+        shift: record.shift_id || 0,
+        delay: record.late_minutes || "00:00",
+        overtime: record.overtime_minutes || "00:00",
+        hours: record.work_hours || "00:00"
+      }));
       
-      console.log('Transformed employees:', transformedEmployees);
       setEmployees(transformedEmployees);
       
     } catch (err) {
@@ -53,8 +47,6 @@ export default function Reporting(){
         const fallbackEmployees = employeesData.map(emp => ({
           num: emp.emp_id || emp.id,
           name: emp.name,
-          clockIn: "--:--",
-          clockOut: "--:--",
           shift: 0,
           delay: "00:00",
           overtime: "00:00",
@@ -68,46 +60,6 @@ export default function Reporting(){
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper function to convert string to number safely
-  const safeParseNumber = (value) => {
-    if (value === null || value === undefined || value === '') return 0;
-    
-    // If it's already a number, return it
-    if (typeof value === 'number') return value;
-    
-    // If it's a string, try to parse it
-    if (typeof value === 'string') {
-      const parsed = parseFloat(value);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-    
-    return 0;
-  };
-
-  // Helper function to format minutes as HH:MM - HANDLES STRINGS
-  const formatMinutesToTime = (minutes) => {
-    const minutesNumber = safeParseNumber(minutes);
-    console.log('Formatting minutes:', minutes, 'as number:', minutesNumber);
-    
-    if (minutesNumber === 0) return "00:00";
-    
-    const hours = Math.floor(minutesNumber / 60);
-    const mins = minutesNumber % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  };
-
-  // Helper function to format hours as HH:MM - HANDLES STRINGS
-  const formatHoursToTime = (hours) => {
-    const hoursNumber = safeParseNumber(hours);
-    console.log('Formatting hours:', hours, 'as number:', hoursNumber);
-    
-    if (hoursNumber === 0) return "00:00";
-    
-    const wholeHours = Math.floor(hoursNumber);
-    const minutes = Math.round((hoursNumber - wholeHours) * 60);
-    return `${wholeHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
   // Handle date change
