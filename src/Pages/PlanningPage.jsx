@@ -305,7 +305,8 @@ export default function Planning(){
                 <button 
                     className="cntbtn" 
                     onClick={() => navigateWeek('prev')}
-                    style={{ padding: "8px 16px" }}
+                    style={{ padding: "8px 16px", width: "200px" }}
+
                 >
                     ← Previous Week
                 </button>
@@ -315,7 +316,7 @@ export default function Planning(){
                 <button 
                     className="cntbtn" 
                     onClick={() => navigateWeek('next')}
-                    style={{ padding: "8px 16px" }}
+                    style={{ padding: "8px 3px", width: "200px" }}
                 >
                     Next Week →
                 </button>
@@ -423,7 +424,7 @@ export default function Planning(){
                   >
                     {saving ? 'Saving...' : `Save ${dayNames[activeTab]} Planning`}
                   </button>
-                  <button 
+                  {/* <button 
                     className='cntbtn' 
                     onClick={saveAllPlanning}
                     disabled={saving}
@@ -438,7 +439,7 @@ export default function Planning(){
                     style={{backgroundColor: '#17a2b8'}}
                   >
                     {loadingPlanning ? 'Loading...' : 'Refresh'}
-                  </button>
+                  </button> */}
                 </div>
             </div>
 
