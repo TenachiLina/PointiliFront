@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; // Don't forget to import useEffect!
+import { useState, useEffect } from "react"; 
 import { worktimeApi } from "../services/worktimeAPI";
 
 export default function Content({ employees, selectedShifts, setSelectedShifts, onEmployeeDeleted }) {
@@ -385,9 +385,29 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
             fontSize: '12px'
           }}
         >
+<<<<<<< HEAD
           Clear Local Data
         </button>
       </div>
+=======
+            Enter clock in/out and shift number: 
+            <button 
+              onClick={clearLocalData}
+              style={{
+                marginLeft: '20px',
+                padding: '5px 10px',
+                backgroundColor: '#ff6b6b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+            New Day!
+            </button>
+        </div>
+>>>>>>> dbc3d83ad9bcfefc31cd2a453efe0b69ae8c5ffc
 
       <div>
         <table border="1" cellPadding="20" cellSpacing="0">

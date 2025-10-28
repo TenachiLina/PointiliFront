@@ -455,7 +455,8 @@ export default function Planning() {
                 <button
                     className="cntbtn"
                     onClick={() => navigateWeek('prev')}
-                    style={{ padding: "8px 16px" }}
+                    style={{ padding: "8px 16px", width: "200px" }}
+
                 >
                     ← Previous Week
                 </button>
@@ -465,7 +466,7 @@ export default function Planning() {
                 <button
                     className="cntbtn"
                     onClick={() => navigateWeek('next')}
-                    style={{ padding: "8px 16px" }}
+                    style={{ padding: "8px 3px", width: "200px" }}
                 >
                     Next Week →
                 </button>
@@ -588,6 +589,7 @@ export default function Planning() {
                 </button>
 
                 <div className='cntbtns' style={{ marginTop: "30px" }}>
+<<<<<<< HEAD
                     <button
                         className='cntbtn'
                         onClick={savePlanning}
@@ -611,6 +613,31 @@ export default function Planning() {
                     >
                         {loadingPlanning ? 'Loading...' : 'Refresh'}
                     </button>
+=======
+                  <button 
+                    className='cntbtn' 
+                    onClick={savePlanning}
+                    disabled={saving || loadingPlanning}
+                  >
+                    {saving ? 'Saving...' : `Save ${dayNames[activeTab]} Planning`}
+                  </button>
+                  {/* <button 
+                    className='cntbtn' 
+                    onClick={saveAllPlanning}
+                    disabled={saving}
+                    style={{backgroundColor: '#28a745'}}
+                  >
+                    {saving ? 'Saving...' : 'Save Entire Week'}
+                  </button>
+                  <button 
+                    className='cntbtn' 
+                    onClick={() => loadExistingPlanningForTab(activeTab)}
+                    disabled={loadingPlanning}
+                    style={{backgroundColor: '#17a2b8'}}
+                  >
+                    {loadingPlanning ? 'Loading...' : 'Refresh'}
+                  </button> */}
+>>>>>>> dbc3d83ad9bcfefc31cd2a453efe0b69ae8c5ffc
                 </div>
             </div>
 
