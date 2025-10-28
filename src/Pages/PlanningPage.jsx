@@ -6,7 +6,7 @@ import ShiftsDropDownList from "../Components/ShiftDropDownList"
 import { employeesApi } from "../services/employeesAPI"
 import { planningApi } from "../services/planningAPI"
 
-export default function Planning(){
+export default function Planning() {
     const [isOpen, setIsOpen] = useState(false);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,6 +14,11 @@ export default function Planning(){
     const [saving, setSaving] = useState(false);
     const [loadingPlanning, setLoadingPlanning] = useState(false);
     const [activeTab, setActiveTab] = useState(0); // 0-6 for days of week
+
+    // add near your useState declarations
+    const [copiedDay, setCopiedDay] = useState(null);
+    const [tick, setTick] = useState(0); // used to force a re-render
+
 
     // Refs to store the current planning data for each day
     const planningDataRefs = useRef({});
@@ -48,7 +53,7 @@ export default function Planning(){
         const currentDay = today.getDay();
         const monday = new Date(today);
         monday.setDate(today.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Adjust to get Monday
-        
+
         for (let i = 0; i < 7; i++) {
             const date = new Date(monday);
             date.setDate(monday.getDate() + i);
@@ -59,6 +64,10 @@ export default function Planning(){
 
     const [weekDates, setWeekDates] = useState(getWeekDates());
 
+
+
+
+
     // Day names for tabs
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -68,10 +77,10 @@ export default function Planning(){
     // Format date for display
     const formatDateDisplay = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
         });
     };
 
@@ -80,18 +89,22 @@ export default function Planning(){
         const fetchEmployees = async () => {
             try {
                 setLoading(true);
-                const employeesData = await employeesApi.getEmployees();
-                
+                const employeesData = await planningApi.getEmployees();
+
+
                 const transformedEmployees = employeesData.map(emp => ({
                     name: emp.name,
                     emp_id: emp.emp_id || emp.id
                 }));
-                
+
                 setEmployees(transformedEmployees);
+                //fetchAllPlannedShifts(transformedEmployees);
             } catch (err) {
-                console.error('Error fetching employees:', err);
-                setError('Failed to load employees');
-                setEmployees(getFallbackEmployees());
+                // console.error('Error fetching employees:', err);
+                // setError('Failed to load employees');
+                // setEmployees(getFallbackEmployees());
+                console.error("❌ Error fetching employees:", err);
+                setEmployees([]); // No fake fallback
             } finally {
                 setLoading(false);
             }
@@ -113,15 +126,15 @@ export default function Planning(){
         try {
             setLoadingPlanning(true);
             const planningData = await planningApi.getPlanning(date);
-            
+
             // Store in ref
             existingPlannings.current[date] = planningData;
-            
+
             // Initialize planning data ref for this date if not exists
             if (!planningDataRefs.current[date]) {
                 planningDataRefs.current[date] = {};
             }
-            
+
             // Populate the planningDataRef with existing data
             planningData.forEach(assignment => {
                 const key = `${assignment.task_id}-${assignment.shift_id}`;
@@ -133,7 +146,7 @@ export default function Planning(){
                     employee_name: assignment.employee_name
                 };
             });
-            
+
             console.log(`Loaded planning for ${date}:`, planningData);
         } catch (error) {
             console.error(`Error loading planning for ${date}:`, error);
@@ -171,7 +184,7 @@ export default function Planning(){
     // Function to get selected employee for a specific post and shift
     const getSelectedEmployee = (postId, shiftId, date) => {
         if (!planningDataRefs.current[date]) return null;
-        
+
         const key = `${postId}-${shiftId}`;
         const assignment = planningDataRefs.current[date][key];
         if (assignment && assignment.emp_id) {
@@ -180,37 +193,71 @@ export default function Planning(){
         return null;
     };
 
-    // Save planning for current tab
+    // // Save planning for current tab
+    // const savePlanning = async () => {
+    //     const currentDate = getCurrentDate();
+    //     try {
+    //         setSaving(true);
+
+    //         // Convert the planning data object to array
+    //         const planningArray = planningDataRefs.current[currentDate]
+    //             ? Object.values(planningDataRefs.current[currentDate]).filter(item => item.emp_id !== null)
+    //             : [];
+
+    //         if (planningArray.length === 0) {
+    //             alert('No planning data to save!');
+    //             return;
+    //         }
+
+    //         await planningApi.savePlanning({
+    //             plan_date: currentDate,
+    //             assignments: planningArray
+    //         });
+
+    //         alert(`Planning for ${formatDateDisplay(currentDate)} saved successfully!`);
+    //         // Reload the planning to reflect changes
+    //         await loadExistingPlanningForTab(activeTab);
+    //     } catch (error) {
+    //         console.error('Error saving planning:', error);
+    //         alert('Error saving planning: ' + error.message);
+    //     } finally {
+    //         setSaving(false);
+    //     }
+    // };
     const savePlanning = async () => {
-        const currentDate = getCurrentDate();
+        const currentDate = getCurrentDate(); // this is your selected day
+        console.log("🧩 Saving planning for:", currentDate);
+
         try {
             setSaving(true);
-            
-            // Convert the planning data object to array
-            const planningArray = planningDataRefs.current[currentDate] 
-                ? Object.values(planningDataRefs.current[currentDate]).filter(item => item.emp_id !== null)
-                : [];
+
+            // ✅ make sure the latest data for that day exists
+            const dayData = planningDataRefs.current[currentDate] || {};
+            const planningArray = Object.values(dayData).filter(item => item.emp_id);
 
             if (planningArray.length === 0) {
                 alert('No planning data to save!');
                 return;
             }
 
+            console.log("🧩 Final planning array sent to backend:", planningArray);
+
+            // ✅ send data to backend
             await planningApi.savePlanning({
                 plan_date: currentDate,
                 assignments: planningArray
             });
 
             alert(`Planning for ${formatDateDisplay(currentDate)} saved successfully!`);
-            // Reload the planning to reflect changes
-            await loadExistingPlanningForTab(activeTab);
+            await loadExistingPlanningForTab(activeTab); // refresh UI
         } catch (error) {
-            console.error('Error saving planning:', error);
+            console.error('❌ Error saving planning:', error);
             alert('Error saving planning: ' + error.message);
         } finally {
             setSaving(false);
         }
     };
+
 
     // Save all planning for the entire week
     const saveAllPlanning = async () => {
@@ -219,7 +266,7 @@ export default function Planning(){
             let totalSaved = 0;
 
             for (const date of weekDates) {
-                const planningArray = planningDataRefs.current[date] 
+                const planningArray = planningDataRefs.current[date]
                     ? Object.values(planningDataRefs.current[date]).filter(item => item.emp_id !== null)
                     : [];
 
@@ -241,7 +288,57 @@ export default function Planning(){
         }
     };
 
-   
+    // ================== COPY & PASTE DAY (debuggable) ==================
+    const copyDay = () => {
+        const date = getCurrentDate();
+        console.log('copyDay clicked — date:', date);
+
+        const dayPlanning = planningDataRefs.current[date];
+        console.log('copyDay - dayPlanning (from ref):', dayPlanning);
+
+        if (!dayPlanning || Object.keys(dayPlanning).length === 0) {
+            alert("No planning to copy for this date!");
+            return;
+        }
+
+        // Only copy slots that have an assigned emp_id (non-empty)
+        const filteredEntries = Object.entries(dayPlanning).filter(([k, v]) => v && v.emp_id);
+        const filtered = Object.fromEntries(filteredEntries);
+
+        console.log('copyDay - filtered (only assigned):', filtered);
+
+        if (Object.keys(filtered).length === 0) {
+            alert("No affected employees to copy!");
+            return;
+        }
+
+        setCopiedDay(JSON.parse(JSON.stringify(filtered))); // deep copy
+        console.log('copyDay - copiedDay state set to:', JSON.parse(JSON.stringify(filtered)));
+        alert(`Planning for ${formatDateDisplay(date)} copied successfully!`);
+    };
+
+    const pasteDay = () => {
+        const date = getCurrentDate();
+
+        if (!copiedDay) {
+            alert("No day copied yet!");
+            return;
+        }
+
+        // ✅ Ensure the day exists in memory
+        if (!planningDataRefs.current[date]) planningDataRefs.current[date] = {};
+
+        // ✅ Copy all slots from copied day to selected day
+        planningDataRefs.current[date] = JSON.parse(JSON.stringify(copiedDay));
+
+        // ✅ Refresh the screen
+        setTick(t => t + 1);
+
+        alert(`✅ Copied planning pasted to ${formatDateDisplay(date)}!`);
+    };
+
+
+
     // Navigate to previous/next week
     const navigateWeek = (direction) => {
         const newWeekDates = weekDates.map(date => {
@@ -268,42 +365,95 @@ export default function Planning(){
         );
     }
 
-    return(
+
+    const exportWeekPlanning = () => {
+        if (!employees || employees.length === 0) {
+            alert("No planning data to export!");
+            return;
+        }
+
+        let csvContent = '';
+
+        weekDates.forEach(date => {
+            // Add date as a title row
+            csvContent += `Date: ${date}\n`;
+
+            // Add header for this day
+            const header = ['Post'];
+            shifts.forEach(shift => {
+                header.push(shift.time);
+            });
+            csvContent += header.join(',') + '\n';
+
+            // Add rows for each post
+            posts.forEach(post => {
+                const row = [post.name];
+                shifts.forEach(shift => {
+                    const dayData = planningDataRefs.current[date] || {};
+                    const key = `${post.id}-${shift.id}`;
+                    const assignment = dayData[key];
+                    row.push(assignment?.employee_name || '');
+                });
+                csvContent += row.join(',') + '\n';
+            });
+
+            // Add an empty line to separate days
+            csvContent += '\n';
+        });
+
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `weekly_planning_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        alert("✅ Weekly planning exported successfully!");
+    };
+
+
+
+
+    return (
         <>
-            <Header /> 
+            <Header />
             <div
-            style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                color: "black",
-                fontSize: "30px",
-                marginLeft:"35px",
-                marginTop: "40px",
-                marginBottom: "0px",
-            }}
+                style={{
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    color: "black",
+                    fontSize: "30px",
+                    marginLeft: "35px",
+                    marginTop: "40px",
+                    marginBottom: "0px",
+                }}
             >
-               Weekly Planning Table
+                Weekly Planning Table
             </div>
             <div
-            style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                color: "black",
-                fontSize: "14px",
-                marginLeft:"35px",
-                marginTop: "5px",
-                marginBottom: "20px",
-            }}
+                style={{
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    color: "black",
+                    fontSize: "14px",
+                    marginLeft: "35px",
+                    marginTop: "5px",
+                    marginBottom: "20px",
+                }}
             >
-               Organize and display work shifts for the entire week
+                Organize and display work shifts for the entire week
             </div>
 
             {/* Week Navigation */}
             <div style={{ margin: "0 35px 20px", display: "flex", alignItems: "center", gap: "15px" }}>
-                <button 
-                    className="cntbtn" 
+                <button
+                    className="cntbtn"
                     onClick={() => navigateWeek('prev')}
                     style={{ padding: "8px 16px" }}
                 >
@@ -312,8 +462,8 @@ export default function Planning(){
                 <span style={{ fontWeight: "bold", fontSize: "16px" }}>
                     Week of {formatDateDisplay(weekDates[0])} - {formatDateDisplay(weekDates[6])}
                 </span>
-                <button 
-                    className="cntbtn" 
+                <button
+                    className="cntbtn"
                     onClick={() => navigateWeek('next')}
                     style={{ padding: "8px 16px" }}
                 >
@@ -339,6 +489,11 @@ export default function Planning(){
                 </div>
             </div>
 
+            {/* Copy / Paste day buttons */}
+            <div style={{ margin: "20px 35px", display: "flex", gap: "10px" }}>
+                <button className="cntbtn" onClick={copyDay}>Copy Day</button>
+                <button className="cntbtn" onClick={pasteDay}>Paste Day</button>
+            </div>
             {/* Current Tab Info */}
             <div style={{ margin: "0 35px 20px", display: "flex", alignItems: "center", gap: "15px" }}>
                 <span style={{ fontWeight: "bold" }}>
@@ -352,93 +507,110 @@ export default function Planning(){
                 )}
             </div>
 
+
             {/* Planning Table for Active Tab */}
             <div>
                 <table border="1" cellPadding="20" cellSpacing="0" style={{ width: "95%", margin: "0 auto" }}>
                     <thead>
-                    <tr>
-                        <th>Posts/Shifts</th>
-                        {shifts.map(shift => (
-                            <th key={shift.id}>{shift.name}</th>
-                        ))}
-                        <th>Operations</th>
-                    </tr>
+                        <tr>
+                            <th>Posts/Shifts</th>
+                            {shifts.map(shift => (
+                                <th key={shift.id}>{shift.name}</th>
+                            ))}
+                            <th>Operations</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {posts.map(post => (
-                        <tr key={post.id}>
-                            <td style={{background:"linear-gradient(to right, #EB4219, #F6892A)", color: "white"}}>
-                                {post.name}
-                            </td>
-                            {shifts.map(shift => (
-                                <td key={shift.id}>
-                                    <DropDownList 
-                                        employees={employees}
-                                        onSelect={(employee) => handleEmployeeSelect(post.id, shift.id, employee, getCurrentDate())}
-                                        selectedEmployee={getSelectedEmployee(post.id, shift.id, getCurrentDate())}
-                                    />
+                        {posts.map(post => (
+                            <tr key={post.id}>
+                                <td style={{ background: "linear-gradient(to right, #EB4219, #F6892A)", color: "white" }}>
+                                    {post.name}
                                 </td>
-                            ))}
-                            <td>
-                                <button className="edit-btn" onClick={() => setIsOpen(true)}>Edit</button>
-                            </td>
-                        </tr>
-                    ))}    
+                                {shifts.map(shift => (
+                                    <td key={shift.id}>
+                                        <DropDownList
+                                            employees={employees}
+                                            onSelect={(employee) => handleEmployeeSelect(post.id, shift.id, employee, getCurrentDate())}
+                                            selectedEmployee={getSelectedEmployee(post.id, shift.id, getCurrentDate())}
+                                        />
+                                    </td>
+                                ))}
+                                <td>
+                                    <button className="edit-btn" onClick={() => setIsOpen(true)}>Edit</button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
 
                 {/* Modal/Dialog */}
                 {isOpen && (
-                <div className="dialog-backdrop">
-                  <div className="dialog-box">
-                <h3
-                style={{
-                  textAlign: "center",
-                  marginTop: "0",
-                  background: "linear-gradient(to right, #EB4219, #F6892A, #F36224, #EB4219)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent"
-                }}
-                >
-                  Edit Box
-                </h3>
-                <div className="modal">
-                  <ShiftsDropDownList Shifts={shifts} />
-                  <DropDownList employees={employees} />
-                </div>
-                <div style={{ textAlign: "center", marginTop:"30px"}}>
-                  <button className="edit-btn" onClick={() => setIsOpen(false)}>Close</button>
-                  <button className="edit-btn" onClick={() => alert(`Values: ${field1}, ${field2}`)}>Save</button>
-                </div>
-                </div>
-                </div>
+                    <div className="dialog-backdrop">
+                        <div className="dialog-box">
+                            <h3
+                                style={{
+                                    textAlign: "center",
+                                    marginTop: "0",
+                                    background: "linear-gradient(to right, #EB4219, #F6892A, #F36224, #EB4219)",
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent"
+                                }}
+                            >
+                                Edit Box
+                            </h3>
+                            <div className="modal">
+                                <ShiftsDropDownList Shifts={shifts} />
+                                <DropDownList employees={employees} />
+                            </div>
+                            <div style={{ textAlign: "center", marginTop: "30px" }}>
+                                <button className="edit-btn" onClick={() => setIsOpen(false)}>Close</button>
+                                <button className="edit-btn" onClick={() => alert(`Values: ${field1}, ${field2}`)}>Save</button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Action Buttons */}
+
+                <button
+                    onClick={exportWeekPlanning}
+                    style={{
+                        margin: '10px 0',
+                        padding: '8px 12px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Export Weekly Planning
+                </button>
+
                 <div className='cntbtns' style={{ marginTop: "30px" }}>
-                  <button 
-                    className='cntbtn' 
-                    onClick={savePlanning}
-                    disabled={saving || loadingPlanning}
-                  >
-                    {saving ? 'Saving...' : `Save ${dayNames[activeTab]} Planning`}
-                  </button>
-                  <button 
-                    className='cntbtn' 
-                    onClick={saveAllPlanning}
-                    disabled={saving}
-                    style={{backgroundColor: '#28a745'}}
-                  >
-                    {saving ? 'Saving...' : 'Save Entire Week'}
-                  </button>
-                  <button 
-                    className='cntbtn' 
-                    onClick={() => loadExistingPlanningForTab(activeTab)}
-                    disabled={loadingPlanning}
-                    style={{backgroundColor: '#17a2b8'}}
-                  >
-                    {loadingPlanning ? 'Loading...' : 'Refresh'}
-                  </button>
+                    <button
+                        className='cntbtn'
+                        onClick={savePlanning}
+                        disabled={saving || loadingPlanning}
+                    >
+                        {saving ? 'Saving...' : `Save ${dayNames[activeTab]} Planning`}
+                    </button>
+                    <button
+                        className='cntbtn'
+                        onClick={saveAllPlanning}
+                        disabled={saving}
+                        style={{ backgroundColor: '#28a745' }}
+                    >
+                        {saving ? 'Saving...' : 'Save Entire Week'}
+                    </button>
+                    <button
+                        className='cntbtn'
+                        onClick={() => loadExistingPlanningForTab(activeTab)}
+                        disabled={loadingPlanning}
+                        style={{ backgroundColor: '#17a2b8' }}
+                    >
+                        {loadingPlanning ? 'Loading...' : 'Refresh'}
+                    </button>
                 </div>
             </div>
 

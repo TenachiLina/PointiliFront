@@ -11,11 +11,11 @@ export const planningApi = {
         },
         body: JSON.stringify(planningData),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to save planning');
       }
-      
+
       return await response.json();
     } catch (error) {
       throw new Error(`Error saving planning: ${error.message}`);
@@ -26,11 +26,11 @@ export const planningApi = {
   getPlanning: async (date) => {
     try {
       const response = await fetch(`${API_BASE_URL}/planning?date=${date}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch planning');
       }
-      
+
       return await response.json();
     } catch (error) {
       throw new Error(`Error fetching planning: ${error.message}`);
@@ -47,11 +47,11 @@ export const planningApi = {
         },
         body: JSON.stringify(assignmentData),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to update assignment');
       }
-      
+
       return await response.json();
     } catch (error) {
       throw new Error(`Error updating assignment: ${error.message}`);
@@ -62,11 +62,11 @@ export const planningApi = {
   getShifts: async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/planning/shifts`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch shifts');
       }
-      
+
       return await response.json();
     } catch (error) {
       throw new Error(`Error fetching shifts: ${error.message}`);
@@ -77,14 +77,29 @@ export const planningApi = {
   getTasks: async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/planning/tasks`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch tasks');
       }
-      
+
       return await response.json();
     } catch (error) {
       throw new Error(`Error fetching tasks: ${error.message}`);
     }
+  },
+  // ✅ Get all employees for the planning page
+  getEmployees: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/planning/employees`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch employees');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Error fetching employees: ${error.message}`);
+    }
   }
+
 };

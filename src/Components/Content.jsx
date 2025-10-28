@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react"; // Don't forget to import useEffect!
 import { worktimeApi } from "../services/worktimeAPI";
 
-export default function Content({ employees, onEmployeeDeleted }) { 
+export default function Content({ employees, selectedShifts, setSelectedShifts, onEmployeeDeleted }) {
   const shiftTimes = {
-    1: { start: "06:00", end: "14:00" }, 
-    2: { start: "08:00", end: "16:00" }, 
-    3: { start: "16:00", end: "00:00" }  
+    1: { start: "06:00", end: "14:00" },
+    2: { start: "08:00", end: "16:00" },
+    3: { start: "16:00", end: "00:00" }
   };
 
   // Load from localStorage on component mount
@@ -29,9 +29,9 @@ export default function Content({ employees, onEmployeeDeleted }) {
   };
 
   // State for selected shifts with localStorage persistence
-  const [selectedShifts, setSelectedShifts] = useState(() => {
-    return loadFromLocalStorage('selectedShifts', {});
-  });
+  // const [selectedShifts, setSelectedShifts] = useState(() => {
+  //   return loadFromLocalStorage('selectedShifts', {});
+  // });
 
   // State for employee times with localStorage persistence - REMOVE THE DUPLICATE ONE!
   const [employeeTimes, setEmployeeTimes] = useState(() => {
@@ -43,9 +43,47 @@ export default function Content({ employees, onEmployeeDeleted }) {
         workTimeId: null
       };
     });
-    
+    // Copy the entire week planning to localStorage
+    const copyWeek = () => {
+      try {
+        localStorage.setItem('copiedWeek', JSON.stringify(employeeTimes));
+        alert('Week planning copied!');
+      } catch (error) {
+        console.error('Error copying week:', error);
+        alert('Failed to copy week planning');
+      }
+    };
+
+    // Paste the copied week planning
+    const pasteWeek = () => {
+      try {
+        const copied = localStorage.getItem('copiedWeek');
+        if (!copied) {
+          alert('No copied week found!');
+          return;
+        }
+
+        const parsed = JSON.parse(copied);
+
+        // Merge with current employees
+        const updatedTimes = { ...employeeTimes };
+        employees.forEach(emp => {
+          if (parsed[emp.num]) {
+            updatedTimes[emp.num] = parsed[emp.num];
+          }
+        });
+
+        setEmployeeTimes(updatedTimes);
+        alert('Week planning pasted!');
+      } catch (error) {
+        console.error('Error pasting week:', error);
+        alert('Failed to paste week planning');
+      }
+    };
+
+
     const savedTimes = loadFromLocalStorage('employeeTimes', {});
-    
+
     // Merge saved times with default structure
     return {
       ...defaultTimes,
@@ -106,9 +144,9 @@ export default function Content({ employees, onEmployeeDeleted }) {
 
     // Handle overnight shifts (shift 3)
     let lateMinutes = clockInTotalMinutes - shiftStartTotalMinutes;
-    
+
     // For shift 3 (16:00-00:00), if clock in is after midnight, adjust calculation
-    if (shiftNumber === 3 && clockInHours < 12) { 
+    if (shiftNumber === 3 && clockInHours < 12) {
       lateMinutes = (clockInTotalMinutes + (24 * 60)) - shiftStartTotalMinutes;
     }
 
@@ -150,23 +188,23 @@ export default function Content({ employees, onEmployeeDeleted }) {
     if (clockIn === "00:00" || clockOut === "00:00") {
       return "00:00";
     }
-    
+
     const [inHours, inMinutes] = clockIn.split(':').map(Number);
     const [outHours, outMinutes] = clockOut.split(':').map(Number);
-    
+
     const totalInMinutes = inHours * 60 + inMinutes;
     const totalOutMinutes = outHours * 60 + outMinutes;
-    
+
     let diffMinutes = totalOutMinutes - totalInMinutes;
 
     // Handle overnight shifts
     if (diffMinutes < 0) {
       diffMinutes += 24 * 60;
     }
-    
+
     const hours = Math.floor(diffMinutes / 60);
     const minutes = diffMinutes % 60;
-    
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
@@ -212,7 +250,7 @@ export default function Content({ employees, onEmployeeDeleted }) {
       const lateMinutes = calculateLateMinutes(clockIn, shiftNumber);
       const overtimeMinutes = calculateOvertimeMinutes(clockOut, shiftNumber);
       const timeOfWork = calculateHours(clockIn, clockOut);
-      
+
       const workTimeData = {
         employeeId: employeeNum,
         date: getCurrentDate(),
@@ -226,7 +264,7 @@ export default function Content({ employees, onEmployeeDeleted }) {
       };
 
       const savedWorkTime = await worktimeApi.saveWorkTime(workTimeData);
-      
+
       setEmployeeTimes(prev => ({
         ...prev,
         [employeeNum]: {
@@ -250,7 +288,7 @@ export default function Content({ employees, onEmployeeDeleted }) {
       ...employeeTimes[employeeNum],
       clockIn: currentTime
     };
-    
+
     setEmployeeTimes(prev => ({
       ...prev,
       [employeeNum]: updatedTimes
@@ -269,8 +307,8 @@ export default function Content({ employees, onEmployeeDeleted }) {
       clockOut: currentTime
     };
 
-   
-    
+
+
     setEmployeeTimes(prev => ({
       ...prev,
       [employeeNum]: updatedTimes
@@ -281,7 +319,7 @@ export default function Content({ employees, onEmployeeDeleted }) {
     }
   };
 
-    // Add a function to clear all data (optional, for testing)
+  // Add a function to clear all data (optional, for testing)
   const clearLocalData = () => {
     localStorage.removeItem('employeeTimes');
     localStorage.removeItem('selectedShifts');
@@ -321,134 +359,138 @@ export default function Content({ employees, onEmployeeDeleted }) {
 
   return (
     <>
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                color: "black",
-                fontSize: "20px",
-                marginLeft:"35px",
-                marginTop: "40px",
-                marginBottom: "0px"
-            }}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          color: "black",
+          fontSize: "20px",
+          marginLeft: "35px",
+          marginTop: "40px",
+          marginBottom: "0px"
+        }}
+      >
+        Enter clock in/out and shift number:
+        <button
+          onClick={clearLocalData}
+          style={{
+            marginLeft: '20px',
+            padding: '5px 10px',
+            backgroundColor: '#ff6b6b',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
         >
-            Enter clock in/out and shift number: 
-            <button 
-              onClick={clearLocalData}
-              style={{
-                marginLeft: '20px',
-                padding: '5px 10px',
-                backgroundColor: '#ff6b6b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              Clear Local Data
-            </button>
-        </div>
+          Clear Local Data
+        </button>
+      </div>
 
-        <div>
+      <div>
         <table border="1" cellPadding="20" cellSpacing="0">
-            <thead>
+          <thead>
             <tr>
-                <th>Num</th>
-                <th>Full name</th>
-                <th>Clock in</th>
-                <th>Clock out</th>
-                <th>Shift number</th>
-                <th>Delay</th>
-                <th>Overtime</th>
-                <th>Hours</th>
-                <th>Operations</th>
+              <th>Num</th>
+              <th>Full name</th>
+              <th>Clock in</th>
+              <th>Clock out</th>
+              <th>Shift number</th>
+              <th>Delay</th>
+              <th>Overtime</th>
+              <th>Hours</th>
+              <th>Operations</th>
             </tr>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             {employees.map((emp) => {
               const currentClockIn = getEmployeeTime(emp.num, 'clockIn');
               const currentClockOut = getEmployeeTime(emp.num, 'clockOut');
               const currentDelay = getDisplayDelay(emp.num);
               const currentOvertime = getDisplayOvertime(emp.num);
-              
+
               return (
                 <tr key={emp.num}>
-                <td>{emp.num}</td>
-                <td>{emp.name}</td>
-                <td>
-                  <button 
-                    className="time-button"
-                    onClick={() => handleClockIn(emp.num)}
-                    style={{
-                      background: currentClockIn === "00:00" ? '#6c757d' : '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      width: '100%'
-                    }}
-                  >
-                    Clock In<br/>{currentClockIn}
-                  </button>
-                </td>
-                <td>
-                  <button 
-                    className="time-button"
-                    onClick={() => handleClockOut(emp.num)}
-                    style={{
-                      background: currentClockOut === "00:00" ? '#6c757d' : '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      width: '100%'
-                    }}
-                  >
-                    Clock Out<br/>{currentClockOut}
-                  </button>
-                </td>
-                <td> 
-                <div>
-                    <select 
-                      value={selectedShifts[emp.num] || ""} 
-                      onChange={(e) => handleShiftChange(emp.num, e.target.value)}
-                      className="dropdown"
+                  <td>{emp.num}</td>
+                  <td>{emp.name}</td>
+                  <td>
+                    <button
+                      className="time-button"
+                      onClick={() => handleClockIn(emp.num)}
+                      style={{
+                        background: currentClockIn === "00:00" ? '#6c757d' : '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        width: '100%'
+                      }}
                     >
-                        <option value="" disabled>Choose a shift:</option>
-                        <option value="1">1 : (6-14h)</option>
-                        <option value="2">2 : (8-16h)</option>
-                        <option value="3">3 : (16-00h)</option>
-                    </select>
-                </div>
-                </td>
-                <td>{currentDelay}</td>
-                <td>{currentOvertime}</td>
-                <td>{calculateHours(currentClockIn, currentClockOut)}</td>
-                <td>
-                <button 
-                    className="opsbtn"
-                    onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete ${emp.name}?`)) {
-                        onEmployeeDeleted(emp.num);
-                    }
-                    }}
-                    
-                >
-                    Remove
-                </button>
-                </td>
+                      Clock In<br />{currentClockIn}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="time-button"
+                      onClick={() => handleClockOut(emp.num)}
+                      style={{
+                        background: currentClockOut === "00:00" ? '#6c757d' : '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        width: '100%'
+                      }}
+                    >
+                      Clock Out<br />{currentClockOut}
+                    </button>
+                  </td>
+                  <td>
+                    <div>
+                      <select
+                        value={selectedShifts[emp.num] || ""}
+                        onChange={(e) =>
+                          setSelectedShifts((prev) => ({
+                            ...prev,
+                            [emp.num]: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select shift</option>
+                        <option value="1">Shift 1</option>
+                        <option value="2">Shift 2</option>
+                        <option value="3">Shift 3</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td>{currentDelay}</td>
+                  <td>{currentOvertime}</td>
+                  <td>{calculateHours(currentClockIn, currentClockOut)}</td>
+                  <td>
+                    <button
+                      className="opsbtn"
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete ${emp.name}?`)) {
+                          onEmployeeDeleted(emp.num);
+                        }
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </td>
                 </tr>
               );
             })}
-            </tbody>
+          </tbody>
+
         </table>
-        </div>
+      </div>
     </>
   );
 }
