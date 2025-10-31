@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:3001/api';
 
 export const planningApi = {
   // Save planning data
@@ -26,7 +26,7 @@ export const planningApi = {
   getPlanning: async (date) => {
     try {
       const response = await fetch(`${API_BASE_URL}/planning?date=${date}`);
-
+      
       if (!response.ok) {
         throw new Error('Failed to fetch planning');
       }
@@ -90,7 +90,7 @@ export const planningApi = {
   // ✅ Get all employees for the planning page
   getEmployees: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/planning/employees`);
+      const response = await fetch(`${API_BASE_URL}/employees`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch employees');

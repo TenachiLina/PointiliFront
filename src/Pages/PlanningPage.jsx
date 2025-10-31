@@ -14,11 +14,11 @@ export default function Planning() {
     const [saving, setSaving] = useState(false);
     const [loadingPlanning, setLoadingPlanning] = useState(false);
     const [activeTab, setActiveTab] = useState(0); // 0-6 for days of week
-
+    const [assignments, setAssignments] = useState({}); //NEWWWWWWWWWWWWWWWWWWWWWW
+    
     // add near your useState declarations
     const [copiedDay, setCopiedDay] = useState(null);
     const [tick, setTick] = useState(0); // used to force a re-render
-
 
     // Refs to store the current planning data for each day
     const planningDataRefs = useRef({});
@@ -64,10 +64,6 @@ export default function Planning() {
 
     const [weekDates, setWeekDates] = useState(getWeekDates());
 
-
-
-
-
     // Day names for tabs
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -83,6 +79,7 @@ export default function Planning() {
             day: 'numeric'
         });
     };
+
 
     // Fetch employees from API on component mount
     useEffect(() => {
@@ -120,44 +117,55 @@ export default function Planning() {
         }
     }, [activeTab, employees]);
 
-    // Function to load existing planning for a specific tab/date
-    const loadExistingPlanningForTab = async (tabIndex) => {
-        const date = weekDates[tabIndex];
-        try {
-            setLoadingPlanning(true);
-            const planningData = await planningApi.getPlanning(date);
+    
+  const loadExistingPlanningForTab = async (tabIndex) => {
+  const date = weekDates[tabIndex];
+  try {
+    setLoadingPlanning(true);
+    const planningData = await planningApi.getPlanning(date);
+    console.log('API returned:', planningData);
+    
+    existingPlannings.current[date] = planningData;
 
-            // Store in ref
-            existingPlannings.current[date] = planningData;
+    if (!planningDataRefs.current[date]) {
+      planningDataRefs.current[date] = {};
+    }
 
-            // Initialize planning data ref for this date if not exists
-            if (!planningDataRefs.current[date]) {
-                planningDataRefs.current[date] = {};
-            }
+    planningData.forEach((assignment) => {
+      const key = `${assignment.task_id}-${assignment.shift_id}`;
 
-            // Populate the planningDataRef with existing data
-            planningData.forEach(assignment => {
-                const key = `${assignment.task_id}-${assignment.shift_id}`;
-                planningDataRefs.current[date][key] = {
-                    shift_id: assignment.shift_id,
-                    emp_id: assignment.emp_id,
-                    task_id: assignment.task_id,
-                    plan_date: date,
-                    employee_name: assignment.employee_name
-                };
-            });
+      // Ensure an array exists for this key
+      if (!Array.isArray(planningDataRefs.current[date][key])) {
+        planningDataRefs.current[date][key] = [];
+      }
 
-            console.log(`Loaded planning for ${date}:`, planningData);
-        } catch (error) {
-            console.error(`Error loading planning for ${date}:`, error);
-            existingPlannings.current[date] = [];
-            if (!planningDataRefs.current[date]) {
-                planningDataRefs.current[date] = {};
-            }
-        } finally {
-            setLoadingPlanning(false);
-        }
-    };
+      // Avoid duplicates
+      const alreadyExists = planningDataRefs.current[date][key].some(
+        (emp) => emp.emp_id === assignment.emp_id
+      );
+
+      if (!alreadyExists) {
+        planningDataRefs.current[date][key].push({
+          emp_id: assignment.emp_id,
+          employee_name: assignment.employee_name,
+          task_id: assignment.task_id,
+          shift_id: assignment.shift_id,
+          plan_date: date,
+        });
+      }
+    });
+
+    console.log(`✅ Loaded planning for ${date}:`, planningDataRefs.current[date]);
+  } catch (error) {
+    console.error(`❌ Error loading planning for ${date}:`, error);
+    existingPlannings.current[date] = [];
+    if (!planningDataRefs.current[date]) {
+      planningDataRefs.current[date] = {};
+    }
+  } finally {
+    setLoadingPlanning(false);
+  }
+};
 
     // Function to get fallback employees
     const getFallbackEmployees = () => [
@@ -166,64 +174,71 @@ export default function Planning() {
         // ... include all your fallback employees with emp_id
     ];
 
+    
     // Function to handle employee selection in a dropdown
     const handleEmployeeSelect = (postId, shiftId, employee, date) => {
         const key = `${postId}-${shiftId}`;
         if (!planningDataRefs.current[date]) {
             planningDataRefs.current[date] = {};
         }
-        planningDataRefs.current[date][key] = {
-            shift_id: shiftId,
-            emp_id: employee?.emp_id || null,
-            task_id: postId,
-            plan_date: date,
-            employee_name: employee?.name || null
-        };
-    };
 
-    // Function to get selected employee for a specific post and shift
-    const getSelectedEmployee = (postId, shiftId, date) => {
-        if (!planningDataRefs.current[date]) return null;
-
-        const key = `${postId}-${shiftId}`;
-        const assignment = planningDataRefs.current[date][key];
-        if (assignment && assignment.emp_id) {
-            return employees.find(emp => emp.emp_id === assignment.emp_id) || null;
+        //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+        // Initialize the array for this specific post + shift
+        if (!Array.isArray(planningDataRefs.current[date][key])) {
+            planningDataRefs.current[date][key] = [];
         }
-        return null;
+
+        // Get the current assigned employees
+        const currentEmployees = planningDataRefs.current[date][key];
+
+        // Avoid adding the same employee twice
+        const alreadyExists = currentEmployees.some(e => e.emp_id === employee.emp_id);
+        
+        
+        // Add employee if not already assigned
+        if (!alreadyExists) {
+            currentEmployees.push({
+                shift_id: shiftId,
+                emp_id: employee.emp_id,
+                task_id: postId,
+                plan_date: date,
+                employee_name: employee.name
+            });
+        }
+
+        // Optional: Log the result
+        console.log(`✅ Added employee ${employee?.name} to post ${postId}, shift ${shiftId}, date ${date}`);
+        //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+
     };
 
-    // // Save planning for current tab
-    // const savePlanning = async () => {
-    //     const currentDate = getCurrentDate();
-    //     try {
-    //         setSaving(true);
+    const getSelectedEmployee = (postId, shiftId, date) => {
+    if (!planningDataRefs.current[date]) return [];
 
-    //         // Convert the planning data object to array
-    //         const planningArray = planningDataRefs.current[currentDate]
-    //             ? Object.values(planningDataRefs.current[currentDate]).filter(item => item.emp_id !== null)
-    //             : [];
+    const key = `${postId}-${shiftId}`;
+    const entry = planningDataRefs.current[date][key];
 
-    //         if (planningArray.length === 0) {
-    //             alert('No planning data to save!');
-    //             return;
-    //         }
+    if (!entry) return [];
 
-    //         await planningApi.savePlanning({
-    //             plan_date: currentDate,
-    //             assignments: planningArray
-    //         });
+    // Case 1: multiple employees stored as array
+    if (Array.isArray(entry)) {
+        return entry.map(e => ({
+        emp_id: e.emp_id,
+        name: e.employee_name || employees.find(emp => emp.emp_id === e.emp_id)?.name || "Unknown"
+        }));
+    }
 
-    //         alert(`Planning for ${formatDateDisplay(currentDate)} saved successfully!`);
-    //         // Reload the planning to reflect changes
-    //         await loadExistingPlanningForTab(activeTab);
-    //     } catch (error) {
-    //         console.error('Error saving planning:', error);
-    //         alert('Error saving planning: ' + error.message);
-    //     } finally {
-    //         setSaving(false);
-    //     }
-    // };
+    // Case 2: single employee stored as object
+    if (entry.emp_id) {
+        return [{
+        emp_id: entry.emp_id,
+        name: entry.employee_name || employees.find(emp => emp.emp_id === entry.emp_id)?.name || "Unknown"
+        }];
+    }
+
+    return [];
+    };
+
     const savePlanning = async () => {
         const currentDate = getCurrentDate(); // this is your selected day
         console.log("🧩 Saving planning for:", currentDate);
@@ -231,62 +246,133 @@ export default function Planning() {
         try {
             setSaving(true);
 
-            // ✅ make sure the latest data for that day exists
-            const dayData = planningDataRefs.current[currentDate] || {};
-            const planningArray = Object.values(dayData).filter(item => item.emp_id);
+            //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+            // ✅ Make sure the latest data for that day exists
+            const dayData = planningDataRefs.current?.[currentDate] || {};
+            const planningArray = [];
 
-            if (planningArray.length === 0) {
-                alert('No planning data to save!');
-                return;
-            }
+            // Loop over each key (e.g., "1-0", "2-1", etc.)
+            Object.entries(dayData).forEach(([key, employees]) => {
+                if (!employees) return;
 
-            console.log("🧩 Final planning array sent to backend:", planningArray);
+                // Extract postId and shiftId from the key
+                const [postId, shiftId] = key.split('-');
 
-            // ✅ send data to backend
-            await planningApi.savePlanning({
-                plan_date: currentDate,
-                assignments: planningArray
+                if (Array.isArray(employees)) {
+                    // ✅ Multiple employees assigned to the same post/shift
+                    employees.forEach(emp => {
+                        if (emp?.emp_id) {
+                            planningArray.push({
+                                shift_id: parseInt(shiftId),
+                                emp_id: emp.emp_id,
+                                task_id: parseInt(postId),
+                                plan_date: currentDate,
+                            });
+                        }
+                    });
+                } else if (employees.emp_id) {
+                    // ✅ Single employee assigned
+                    planningArray.push({
+                        shift_id: parseInt(shiftId),
+                        emp_id: employees.emp_id,
+                        task_id: parseInt(postId),
+                        plan_date: currentDate,
+                    });
+                }
             });
+            //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 
-            alert(`Planning for ${formatDateDisplay(currentDate)} saved successfully!`);
-            await loadExistingPlanningForTab(activeTab); // refresh UI
+        //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+        // ✅ No data to save
+        if (planningArray.length === 0) {
+            alert('No planning data to save!');
+            return;
+        }
+
+        console.log("📦 planningArray before save:", planningArray);
+
+        // ✅ Send data to backend
+        await planningApi.savePlanning({
+            plan_date: currentDate,
+            assignments: planningArray
+        });
+
+        alert(`Planning for ${formatDateDisplay(currentDate)} saved successfully!`);
+
+        // ✅ Reload the planning table to reflect changes
+        await loadExistingPlanningForTab(activeTab);
+
         } catch (error) {
             console.error('❌ Error saving planning:', error);
             alert('Error saving planning: ' + error.message);
         } finally {
             setSaving(false);
         }
+        //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
     };
 
+    //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+    const saveAllPlanning = async () => { 
+     try {
+        setSaving(true);
+        let totalSaved = 0;
 
-    // Save all planning for the entire week
-    const saveAllPlanning = async () => {
-        try {
-            setSaving(true);
-            let totalSaved = 0;
+        for (const date of weekDates) {
+            const planningArray = [];
 
-            for (const date of weekDates) {
-                const planningArray = planningDataRefs.current[date]
-                    ? Object.values(planningDataRefs.current[date]).filter(item => item.emp_id !== null)
-                    : [];
+            // ✅ Check if we have planning data for this date
+            if (planningDataRefs.current?.[date]) {
+                Object.entries(planningDataRefs.current[date]).forEach(([key, item]) => {
+                    if (!item) return;
 
-                if (planningArray.length > 0) {
-                    await planningApi.savePlanning({
-                        plan_date: date,
-                        assignments: planningArray
-                    });
-                    totalSaved += planningArray.length;
-                }
+                    // 🔹 Multiple employees assigned to the same shift
+                    if (Array.isArray(item)) {
+                        item.forEach(emp => {
+                            if (emp?.emp_id) {
+                                planningArray.push({
+                                    shift_id: emp.shift_id,
+                                    emp_id: emp.emp_id,
+                                    task_id: emp.task_id,
+                                    plan_date: date
+                                });
+                            }
+                        });
+                    } 
+                    // 🔹 Single employee assigned
+                    else if (item.emp_id) {
+                        planningArray.push({
+                            shift_id: item.shift_id,
+                            emp_id: item.emp_id,
+                            task_id: item.task_id,
+                            plan_date: date
+                        });
+                    }
+                });
             }
 
-            alert(`All planning saved successfully! Total assignments: ${totalSaved}`);
+            // ✅ If there’s data to save for this day
+            if (planningArray.length > 0) {
+                console.log(`📦 Saving planning for ${date}:`, planningArray);
+
+                await planningApi.savePlanning({
+                    plan_date: date,
+                    assignments: planningArray
+                });
+
+                totalSaved += planningArray.length;
+            }
+        }
+
+        alert(`✅ All planning saved successfully! Total assignments: ${totalSaved}`);
         } catch (error) {
-            console.error('Error saving all planning:', error);
+            console.error('❌ Error saving all planning:', error);
             alert('Error saving planning: ' + error.message);
         } finally {
             setSaving(false);
         }
     };
+    //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+
 
     // ================== COPY & PASTE DAY (debuggable) ==================
     const copyDay = () => {
@@ -294,6 +380,7 @@ export default function Planning() {
         console.log('copyDay clicked — date:', date);
 
         const dayPlanning = planningDataRefs.current[date];
+        console.log(planningDataRefs.current[date]);
         console.log('copyDay - dayPlanning (from ref):', dayPlanning);
 
         if (!dayPlanning || Object.keys(dayPlanning).length === 0) {
@@ -302,8 +389,12 @@ export default function Planning() {
         }
 
         // Only copy slots that have an assigned emp_id (non-empty)
-        const filteredEntries = Object.entries(dayPlanning).filter(([k, v]) => v && v.emp_id);
+        const filteredEntries = Object.entries(dayPlanning).filter(
+        ([k, v]) => Array.isArray(v) && v.some(emp => emp.emp_id)
+        );
+
         const filtered = Object.fromEntries(filteredEntries);
+
 
         console.log('copyDay - filtered (only assigned):', filtered);
 
@@ -529,11 +620,23 @@ export default function Planning() {
                                 </td>
                                 {shifts.map(shift => (
                                     <td key={shift.id}>
-                                        <DropDownList
-                                            employees={employees}
-                                            onSelect={(employee) => handleEmployeeSelect(post.id, shift.id, employee, getCurrentDate())}
-                                            selectedEmployee={getSelectedEmployee(post.id, shift.id, getCurrentDate())}
+                                        {/* NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw */} 
+                                        {/* Display already selected employees */}
+                                        {(getSelectedEmployee(post.id, shift.id, getCurrentDate()) || []).map((emp, idx) => ( 
+                                           <div key={idx}>{emp.name}</div>
+                                        ))}
+
+                                        <DropDownList 
+                                            employees={employees.filter(e =>
+                                                // Hide employees already selected for this post + shift + date
+                                                !getSelectedEmployee(post.id, shift.id, getCurrentDate()).some(sel => sel.emp_id === e.emp_id)
+                                            )}
+                                            onSelect={(employee) =>
+                                                handleEmployeeSelect(post.id, shift.id, employee, getCurrentDate())
+                                            }
+                                            // ❌ No selectedEmployee prop — handled elsewhere in multi-employee view
                                         />
+                                        {/* NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw */}
                                     </td>
                                 ))}
                                 <td>
@@ -589,31 +692,6 @@ export default function Planning() {
                 </button>
 
                 <div className='cntbtns' style={{ marginTop: "30px" }}>
-<<<<<<< HEAD
-                    <button
-                        className='cntbtn'
-                        onClick={savePlanning}
-                        disabled={saving || loadingPlanning}
-                    >
-                        {saving ? 'Saving...' : `Save ${dayNames[activeTab]} Planning`}
-                    </button>
-                    <button
-                        className='cntbtn'
-                        onClick={saveAllPlanning}
-                        disabled={saving}
-                        style={{ backgroundColor: '#28a745' }}
-                    >
-                        {saving ? 'Saving...' : 'Save Entire Week'}
-                    </button>
-                    <button
-                        className='cntbtn'
-                        onClick={() => loadExistingPlanningForTab(activeTab)}
-                        disabled={loadingPlanning}
-                        style={{ backgroundColor: '#17a2b8' }}
-                    >
-                        {loadingPlanning ? 'Loading...' : 'Refresh'}
-                    </button>
-=======
                   <button 
                     className='cntbtn' 
                     onClick={savePlanning}
@@ -637,7 +715,6 @@ export default function Planning() {
                   >
                     {loadingPlanning ? 'Loading...' : 'Refresh'}
                   </button> */}
->>>>>>> dbc3d83ad9bcfefc31cd2a453efe0b69ae8c5ffc
                 </div>
             </div>
 
