@@ -260,8 +260,12 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
         shift: shiftNumber || 0,
         delay: formatMinutesToTime(lateMinutes),
         overtime: formatMinutesToTime(overtimeMinutes),
-        late_minutes: lateMinutes
+        late_minutes: lateMinutes,
+        consomation: employeeTimes[employeeNum]?.consomation || 0,
+        penalty: employeeTimes[employeeNum]?.penalty || 0,
+        bonus: employeeTimes[employeeNum]?.bonus || 0
       };
+
 
       const savedWorkTime = await worktimeApi.saveWorkTime(workTimeData);
 
@@ -392,6 +396,9 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
               <th>Clock in</th>
               <th>Clock out</th>
               <th>Shift number</th>
+              <th>Consomation</th>
+              <th>Penalty</th>
+              <th>Bonus</th>
               <th>Delay</th>
               <th>Overtime</th>
               <th>Hours</th>
@@ -463,6 +470,57 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                       </select>
                     </div>
                   </td>
+                  <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.consomation || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          consomation: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
+                <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.penalty || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          penalty: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
+                <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.bonus || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          bonus: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
                   <td>{currentDelay}</td>
                   <td>{currentOvertime}</td>
                   <td>{calculateHours(currentClockIn, currentClockOut)}</td>
