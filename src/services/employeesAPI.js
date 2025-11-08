@@ -41,54 +41,65 @@ export const employeesApi = {
   },
 
   async addEmployee(employeeData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/employees`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(employeeData),
-      });
+  try {
+    console.log(employeeData);
+    const formData = new FormData();
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error adding employee:', error);
-      throw error;
+    if (employeeData.personal_image) {
+      formData.append("personal_image", employeeData.personal_image);
     }
+    formData.append("name", employeeData.name);
+    formData.append("Total_hours", employeeData.Total_hours);
+    formData.append("Base_salary", employeeData.Base_salary);
+    formData.append("address", employeeData.address);
+    formData.append("phone_number", employeeData.phone_number);
+    
+    
+    const response = await fetch(`${API_BASE_URL}/employees`, {
+      method: "POST",
+      body: formData, // ✅ no JSON, no headers
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding employee:", error);
+    throw error;
   }
+},
+
+async updateEmployee(employeeId, employeeData) {
+  try {
+    const formData = new FormData();
+    if (employeeData.personal_image)
+      formData.append("personal_image", employeeData.personal_image);
+
+    formData.append("name", employeeData.name);
+    formData.append("Total_hours", employeeData.Total_hours);
+    formData.append("Base_salary", employeeData.Base_salary);
+    formData.append("address", employeeData.address);
+    formData.append("phone_number", employeeData.phone_number);
+
+    const response = await fetch(`${API_BASE_URL}/employees/${employeeId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    return await response.json();
+  } catch (err) {
+    console.error("Error updating employee:", err);
+    throw err;
+  }
+}
+
 };
 
 
-// export const employeesApi = {
-//   async getEmployees() {
-//     try {
-//       const response = await fetch('http://localhost:3000/api/employees');
-//       console.log('Raw response:', response);
-//       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//       const data = await response.json();
-//       console.log('Parsed data:', data);
-//       return data;
-//     } catch (error) {
-//       console.error('Error fetching employees:', error);
-//       throw error;
-//     }
-//   },
-//   async deleteEmployee(employeeId) {
-//     const response = await fetch(`http://localhost:3000/api/employees/${employeeId}`, { method: 'DELETE' });
-//     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//     return await response.json();
-//   },
-//   async addEmployee(employeeData) {
-//     const response = await fetch(`http://localhost:3000/api/employees`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(employeeData),
-//     });
-//     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//     return await response.json();
-//   }
-// };
+
+
+
