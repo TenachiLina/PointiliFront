@@ -314,21 +314,25 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
 
   // Add a function to clear all data (optional, for testing)
   const clearLocalData = () => {
-    localStorage.removeItem('employeeTimes');
-    localStorage.removeItem('selectedShifts');
-    setEmployeeTimes(prev => {
-      const resetTimes = {};
-      employees.forEach(emp => {
-        resetTimes[emp.num] = {
-          clockIn: "00:00",
-          clockOut: "00:00",
-          workTimeId: null
-        };
-      });
-      return resetTimes;
+      localStorage.removeItem('employeeTimes');
+
+  // Reset only the employeeTimes data
+  setEmployeeTimes(prev => {
+    const resetTimes = {};
+    employees.forEach(emp => {
+      resetTimes[emp.num] = {
+        clockIn: "00:00",
+        clockOut: "00:00",
+        workTimeId: null,
+        consomation: 0,
+        penalty: 0,
+        bonus: 0
+      };
     });
-    setSelectedShifts({});
-    alert('Local data cleared!');
+    return resetTimes;
+  });
+
+  alert('All clock-in/out and related fields have been reset!');
   };
   // Get current time for an employee
   const getEmployeeTime = (employeeNum, type) => {
