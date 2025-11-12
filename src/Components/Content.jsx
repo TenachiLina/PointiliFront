@@ -8,6 +8,8 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
     3: { start: "16:00", end: "00:00" }
   };
 
+  const [currentTab, setCurrentTab] = useState(1);
+
   // Load from localStorage on component mount
   const loadFromLocalStorage = (key, defaultValue) => {
     try {
@@ -208,19 +210,6 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // REMOVE THIS DUPLICATE STATE DECLARATION!
-  // const [employeeTimes, setEmployeeTimes] = useState(() => {
-  //   const initialTimes = {};
-  //   employees.forEach(emp => {
-  //     initialTimes[emp.num] = {
-  //       clockIn: "00:00",
-  //       clockOut: "00:00",
-  //       workTimeId: null
-  //     };
-  //   });
-  //   return initialTimes;
-  // });
-
   // Function to get current time in HH:MM format
   const getCurrentTime = () => {
     const now = new Date();
@@ -385,6 +374,25 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
       </button>
 
       </div>
+<div style={{ display: "flex", gap: "10px", marginLeft: "35px", marginTop: "20px" }}>
+  {[1, 2, 3].map((shift) => (
+    <button
+      key={shift}
+      onClick={() => setCurrentTab(shift)}
+      style={{
+        padding: "10px 20px",
+        borderRadius: "8px",
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: currentTab === shift ? "#007bff" : "#ccc",
+        color: "white",
+        fontWeight: "bold",
+      }}
+    >
+      Shift {shift} ({shiftTimes[shift].start} - {shiftTimes[shift].end})
+    </button>
+  ))}
+</div>
 
 
       <div>
@@ -406,7 +414,9 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp) => {
+{employees
+  .filter((emp) => parseInt(selectedShifts[emp.num]) === currentTab)
+  .map((emp) => {
               const currentClockIn = getEmployeeTime(emp.num, 'clockIn');
               const currentClockOut = getEmployeeTime(emp.num, 'clockOut');
               const currentDelay = getDisplayDelay(emp.num);
