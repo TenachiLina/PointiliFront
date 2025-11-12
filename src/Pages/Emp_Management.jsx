@@ -41,6 +41,39 @@ export default function Emp_Management() {
   }
 
   // ✅ SAVE (Add or Update)
+  // async function handleSave() {
+  //   try {
+  //     if (isEditing) {
+  //       // ✅ Editing existing employee
+  //       await employeesApi.updateEmployee(editingId, employeeForm);
+  //       alert("✅ Employee updated successfully");
+  //     } else {
+  //       // ✅ Adding new employee
+  //       await employeesApi.addEmployee(employeeForm);
+  //       alert("✅ Employee added successfully");
+  //     }
+
+  //     setShowForm(false);
+  //     setIsEditing(false);
+  //     setEditingId(null);
+
+  //     // ✅ Reset form
+  //     setEmployeeForm({
+  //       personal_image: null,
+  //       name: "",
+  //       Total_hours: "",
+  //       Base_salary: "",
+  //       address: "",
+  //       phone_number: "",
+  //     });
+
+  //     fetchEmployees(); // ✅ refresh table
+
+  //   } catch (error) {
+  //     alert("❌ Failed to save employee");
+  //   }
+  // }
+
   async function handleSave() {
     try {
       if (isEditing) {
@@ -48,6 +81,18 @@ export default function Emp_Management() {
         await employeesApi.updateEmployee(editingId, employeeForm);
         alert("✅ Employee updated successfully");
       } else {
+        // ✅ Check for duplicates
+        const isDuplicate = employees.some(
+          (emp) =>
+            emp.name.trim().toLowerCase() === employeeForm.name.trim().toLowerCase() &&
+            emp.phone_number.trim() === employeeForm.phone_number.trim()
+        );
+
+        if (isDuplicate) {
+          alert("⚠️ This employee already exists in the table!");
+          return; // Stop saving
+        }
+
         // ✅ Adding new employee
         await employeesApi.addEmployee(employeeForm);
         alert("✅ Employee added successfully");
@@ -68,7 +113,6 @@ export default function Emp_Management() {
       });
 
       fetchEmployees(); // ✅ refresh table
-
     } catch (error) {
       alert("❌ Failed to save employee");
     }
