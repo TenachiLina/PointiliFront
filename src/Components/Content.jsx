@@ -8,6 +8,8 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
     3: { start: "16:00", end: "00:00" }
   };
 
+  const [currentTab, setCurrentTab] = useState(1);
+
   // Load from localStorage on component mount
   const loadFromLocalStorage = (key, defaultValue) => {
     try {
@@ -208,19 +210,6 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // REMOVE THIS DUPLICATE STATE DECLARATION!
-  // const [employeeTimes, setEmployeeTimes] = useState(() => {
-  //   const initialTimes = {};
-  //   employees.forEach(emp => {
-  //     initialTimes[emp.num] = {
-  //       clockIn: "00:00",
-  //       clockOut: "00:00",
-  //       workTimeId: null
-  //     };
-  //   });
-  //   return initialTimes;
-  // });
-
   // Function to get current time in HH:MM format
   const getCurrentTime = () => {
     const now = new Date();
@@ -260,8 +249,12 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
         shift: shiftNumber || 0,
         delay: formatMinutesToTime(lateMinutes),
         overtime: formatMinutesToTime(overtimeMinutes),
-        late_minutes: lateMinutes
+        late_minutes: lateMinutes,
+        consomation: employeeTimes[employeeNum]?.consomation || 0,
+        penalty: employeeTimes[employeeNum]?.penalty || 0,
+        bonus: employeeTimes[employeeNum]?.bonus || 0
       };
+
 
       const savedWorkTime = await worktimeApi.saveWorkTime(workTimeData);
 
@@ -321,21 +314,25 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
 
   // Add a function to clear all data (optional, for testing)
   const clearLocalData = () => {
-    localStorage.removeItem('employeeTimes');
-    localStorage.removeItem('selectedShifts');
-    setEmployeeTimes(prev => {
-      const resetTimes = {};
-      employees.forEach(emp => {
-        resetTimes[emp.num] = {
-          clockIn: "00:00",
-          clockOut: "00:00",
-          workTimeId: null
-        };
-      });
-      return resetTimes;
+      localStorage.removeItem('employeeTimes');
+
+  // Reset only the employeeTimes data
+  setEmployeeTimes(prev => {
+    const resetTimes = {};
+    employees.forEach(emp => {
+      resetTimes[emp.num] = {
+        clockIn: "00:00",
+        clockOut: "00:00",
+        workTimeId: null,
+        consomation: 0,
+        penalty: 0,
+        bonus: 0
+      };
     });
-    setSelectedShifts({});
-    alert('Local data cleared!');
+    return resetTimes;
+  });
+
+  alert('All clock-in/out and related fields have been reset!');
   };
   // Get current time for an employee
   const getEmployeeTime = (employeeNum, type) => {
@@ -381,6 +378,25 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
       </button>
 
       </div>
+<div style={{ display: "flex", gap: "10px", marginLeft: "35px", marginTop: "20px" }}>
+  {[1, 2, 3].map((shift) => (
+    <button
+      key={shift}
+      onClick={() => setCurrentTab(shift)}
+      style={{
+        padding: "10px 20px",
+        borderRadius: "8px",
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: currentTab === shift ? "#007bff" : "#ccc",
+        color: "white",
+        fontWeight: "bold",
+      }}
+    >
+      Shift {shift} ({shiftTimes[shift].start} - {shiftTimes[shift].end})
+    </button>
+  ))}
+</div>
 
 
       <div>
@@ -392,6 +408,9 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
               <th>Clock in</th>
               <th>Clock out</th>
               <th>Shift number</th>
+              <th>Consomation</th>
+              <th>Penalty</th>
+              <th>Bonus</th>
               <th>Delay</th>
               <th>Overtime</th>
               <th>Hours</th>
@@ -399,7 +418,9 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp) => {
+{employees
+  .filter((emp) => parseInt(selectedShifts[emp.num]) === currentTab)
+  .map((emp) => {
               const currentClockIn = getEmployeeTime(emp.num, 'clockIn');
               const currentClockOut = getEmployeeTime(emp.num, 'clockOut');
               const currentDelay = getDisplayDelay(emp.num);
@@ -463,6 +484,57 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                       </select>
                     </div>
                   </td>
+                  <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.consomation || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          consomation: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
+                <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.penalty || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          penalty: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
+                <td>
+                  <input
+                    type="number"
+                    value={employeeTimes[emp.num]?.bonus || ""}
+                    onChange={(e) =>
+                      setEmployeeTimes((prev) => ({
+                        ...prev,
+                        [emp.num]: {
+                          ...prev[emp.num],
+                          bonus: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{ width: "80px" }}
+                  />
+                </td>
+
                   <td>{currentDelay}</td>
                   <td>{currentOvertime}</td>
                   <td>{calculateHours(currentClockIn, currentClockOut)}</td>
