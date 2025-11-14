@@ -47,5 +47,17 @@ export const worktimeApi = {
     const response = await fetch(`${API_BASE_URL}/worktime?date=${date}`);
     if (!response.ok) throw new Error('Failed to fetch work times by date');
     return await response.json();
-  }
+  },
+  getReport: async (start, end, empId) => {
+    const res = await fetch(`/api/worktime/report?start=${start}&end=${end}&empId=${empId}`);
+    return res.json(); // this returns { rows: [...], summary: {...} }
+  },
+  saveComment: async (empId, date, comment) => {
+    const res = await fetch("/api/worktime/comment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ empId, date, comment }),
+    });
+    return res.json();
+  },
 };
