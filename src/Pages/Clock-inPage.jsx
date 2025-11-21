@@ -259,10 +259,6 @@ function ClockInPage() {
         selectedShifts={selectedShifts}       // ✅ pass the state
         setSelectedShifts={setSelectedShifts} // ✅ pass the setter
         onEmployeeDeleted={handleEmployeeDeleted} />
-      <div className='cntbtns'>
-        <button className='cntbtn' onClick={addNewEmployee}>New Employee</button>
-        <button className='cntbtn' onClick={saveAll}>Save</button>
-      </div>
     </>
   );
 }

@@ -403,18 +403,18 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
         <table border="1" cellPadding="20" cellSpacing="0">
           <thead>
             <tr>
-              <th>Num</th>
+              {/* <th>Num</th> */}
               <th>Full name</th>
               <th>Clock in</th>
               <th>Clock out</th>
-              <th>Shift number</th>
+              {/* <th>Shift number</th> */}
               <th>Consomation</th>
               <th>Penalty</th>
               <th>Bonus</th>
               <th>Delay</th>
               <th>Overtime</th>
               <th>Hours</th>
-              <th>Operations</th>
+              {/* <th>Operations</th> */}
             </tr>
           </thead>
           <tbody>
@@ -428,7 +428,7 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
 
               return (
                 <tr key={emp.num}>
-                  <td>{emp.num}</td>
+                  {/* <td>{emp.num}</td> */}
                   <td>{emp.name}</td>
                   <td>
                     <button
@@ -466,7 +466,7 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                       Clock Out<br />{currentClockOut}
                     </button>
                   </td>
-                  <td>
+                  {/* <td>
                     <div>
                       <select
                         value={selectedShifts[emp.num] || ""}
@@ -483,7 +483,7 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                         <option value="3">Shift 3</option>
                       </select>
                     </div>
-                  </td>
+                  </td> */}
                   <td>
                   <input
                     type="number"
@@ -538,7 +538,7 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                   <td>{currentDelay}</td>
                   <td>{currentOvertime}</td>
                   <td>{calculateHours(currentClockIn, currentClockOut)}</td>
-                  <td>
+                  {/* <td>
                     <button
                       className="opsbtn"
                       onClick={() => {
@@ -549,7 +549,7 @@ export default function Content({ employees, selectedShifts, setSelectedShifts, 
                     >
                       Remove
                     </button>
-                  </td>
+                  </td> */}
                 </tr>
               );
             })}

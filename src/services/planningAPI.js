@@ -100,6 +100,31 @@ export const planningApi = {
     } catch (error) {
       throw new Error(`Error fetching employees: ${error.message}`);
     }
+  },
+
+
+  //NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+  //NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+    // ✅ Delete one employee from planning (planning + worktime)
+  deleteFromPlanning: async (deleteData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/planning/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(deleteData),
+
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete planning record');
+      } 
+
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Error deleting planning record: ${error.message}`);
+    }
   }
 
 };

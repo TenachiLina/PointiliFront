@@ -40,40 +40,6 @@ export default function Emp_Management() {
     }));
   }
 
-  // ✅ SAVE (Add or Update)
-  // async function handleSave() {
-  //   try {
-  //     if (isEditing) {
-  //       // ✅ Editing existing employee
-  //       await employeesApi.updateEmployee(editingId, employeeForm);
-  //       alert("✅ Employee updated successfully");
-  //     } else {
-  //       // ✅ Adding new employee
-  //       await employeesApi.addEmployee(employeeForm);
-  //       alert("✅ Employee added successfully");
-  //     }
-
-  //     setShowForm(false);
-  //     setIsEditing(false);
-  //     setEditingId(null);
-
-  //     // ✅ Reset form
-  //     setEmployeeForm({
-  //       personal_image: null,
-  //       name: "",
-  //       Total_hours: "",
-  //       Base_salary: "",
-  //       address: "",
-  //       phone_number: "",
-  //     });
-
-  //     fetchEmployees(); // ✅ refresh table
-
-  //   } catch (error) {
-  //     alert("❌ Failed to save employee");
-  //   }
-  // }
-
   async function handleSave() {
     try {
       if (isEditing) {
@@ -181,7 +147,7 @@ export default function Emp_Management() {
               <tr>
                 <th>Photo</th>
                 <th>Full Name</th>
-                <th>Total Hours</th>
+                <th>Salary Per Hour</th>
                 <th>Base Salary</th>
                 <th>Address</th>
                 <th>Phone</th>
@@ -249,7 +215,7 @@ export default function Emp_Management() {
                   onChange={handleChange}
                 />
 
-                <label>Total Hours:</label>
+                <label>Salary Per Hour:</label>
                 <input
                   type="number"
                   name="Total_hours"

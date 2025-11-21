@@ -23,6 +23,7 @@ export default function Reporting() {
   const [showEmployees, setShowEmployees] = useState(true);
 
 
+  //display list of employees:
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -39,6 +40,8 @@ export default function Reporting() {
 
     fetchEmployees();
   }, []);
+
+  //another function for listing the employees
   useEffect(() => {
     (async () => {
       const list = await employeesApi.getEmployees();
@@ -47,7 +50,8 @@ export default function Reporting() {
     })();
   }, []);
 
-
+ 
+  //Display the selected period days(start, end)
   const computeRange = () => {
     if (filterMode === "day") return { start: selectedDate, end: selectedDate };
 
@@ -115,7 +119,7 @@ export default function Reporting() {
         penalty: r.penalty || 0,
         consommation: r.consommation || 0,
         comment: r.comment || "",
-        salary: r.salary || 0,
+        salary: Number(r.salary || 0), 
         emp_id: r.emp_id || null,
         work_time_id: r.worktime_id || null,
       }));
@@ -169,6 +173,7 @@ export default function Reporting() {
             overflow: "visible",
           }}
         >
+          {/* create a button to display right side forms, used to select period and dates. */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             title={showFilters ? "Hide Filters" : "Show Filters"}
@@ -179,6 +184,7 @@ export default function Reporting() {
 
           {showFilters && (
             <div style={{ marginTop: 50 }}>
+              {/* Drop down list to select filter(week, day, month) */}
               <h4 style={{ fontSize: 14, marginBottom: 12, color: "#374151" }}>Filters</h4>
               <label style={{ fontSize: 12, color: "#6b7280" }}>Range</label>
               <select
@@ -191,7 +197,8 @@ export default function Reporting() {
                 <option value="month">Month</option>
                 <option value="custom">Custom</option>
               </select>
-
+              
+              {/* Text field to select the started date if the period isn't custome, else text field for both start and end*/}
               {filterMode === "custom" ? (
                 <>
                   <label style={{ fontSize: 12, color: "#6b7280" }}>Start</label>
@@ -206,6 +213,7 @@ export default function Reporting() {
                 </>
               )}
 
+              {/* Implement the button that will launch the report generation (Apply)*/}
               <button
                 onClick={fetchReportRange}
                 style={{
@@ -237,7 +245,7 @@ export default function Reporting() {
             padding: showEmployees ? 12 : 0,
             position: "relative",
             transition: "width 0.3s",
-            background: "#fff",
+            background: "#FFF0DD",
             boxShadow: showEmployees ? "2px 0 6px rgba(0,0,0,0.05)" : "none",
             overflow: "visible",
           }}
