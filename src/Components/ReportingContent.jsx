@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from './config';
 
+import { API_BASE_URL } from "../services/config";
 
 export default function ReportingContent({
     rows = [],
@@ -131,7 +132,7 @@ export default function ReportingContent({
 
     const saveComment = async (row) => {
         try {
-            await fetch(`http://localhost:3001/worktime/${row.worktime_id}`, {
+            await fetch(`${API_BASE_URL}/worktime/${row.worktime_id}`, {
 
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
