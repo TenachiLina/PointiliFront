@@ -6,6 +6,9 @@ import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons
 import { employeesApi } from "../services/employeesAPI";
 import { worktimeApi } from "../services/worktimeAPI";
 
+
+import { API_BASE_URL } from "../services/config";
+
 export default function Reporting() {
   const todayISO = new Date().toISOString().split("T")[0];
 
@@ -21,6 +24,7 @@ export default function Reporting() {
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(true);
   const [showEmployees, setShowEmployees] = useState(true);
+  
 
 
   //display list of employees:
@@ -29,7 +33,7 @@ export default function Reporting() {
       try {
         const list =
           (await employeesApi?.getEmployees?.()) ??
-          (await fetch("http://localhost:3001/employees").then((r) => r.json()));
+          (await fetch("${API_BASE_URL}/employees").then((r) => r.json()));
 
         setEmployees(list || []);
         if (list.length) setSelectedEmployeeId(list[0].emp_id || list[0].id);
@@ -99,7 +103,7 @@ export default function Reporting() {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/worktime/report?start=${start}&end=${end}&empId=${selectedEmployeeId}`
+        `${API_BASE_URL}/worktime/report?start=${start}&end=${end}&empId=${selectedEmployeeId}`
       );
 
       const data = await response.json();
