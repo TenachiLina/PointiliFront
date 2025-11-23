@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from './config';
 
 import { API_BASE_URL } from "../services/config";
 

@@ -8,8 +8,8 @@ export const employeesApi = {
 
   async getEmployees() {
     try {
-      console.log("🟢 Fetching employees from:", `${API_BASE_URL}/employees`);
-      const response = await fetch(`${API_BASE_URL}/employees`);
+      console.log("🟢 Fetching employees from:", `https://pointiliback.onrender.com/employees`);
+      const response = await fetch(`https://pointiliback.onrender.com/employees`);
 
       console.log("🟡 Response status:", response.status);
       const text = await response.text();
@@ -29,7 +29,7 @@ export const employeesApi = {
 
   async deleteEmployee(employeeId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/employees/${employeeId}`, {
+      const response = await fetch(`https://pointiliback.onrender.com/employees/${employeeId}`, {
         method: 'DELETE',
       });
 
@@ -59,7 +59,7 @@ export const employeesApi = {
     formData.append("phone_number", employeeData.phone_number);
     
     
-    const response = await fetch(`${API_BASE_URL}/employees`, {
+    const response = await fetch(`https://pointiliback.onrender.com/employees`, {
       method: "POST",
       body: formData, // ✅ no JSON, no headers
     });
@@ -87,7 +87,7 @@ async updateEmployee(employeeId, employeeData) {
     formData.append("address", employeeData.address);
     formData.append("phone_number", employeeData.phone_number);
 
-    const response = await fetch(`${API_BASE_URL}/employees/${employeeId}`, {
+    const response = await fetch(`https://pointiliback.onrender.com/employees/${employeeId}`, {
       method: "PUT",
       body: formData,
     });
