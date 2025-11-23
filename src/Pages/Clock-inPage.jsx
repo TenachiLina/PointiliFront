@@ -206,7 +206,7 @@ function ClockInPage() {
 
   // CLOCK IN
   const handleClockIn = () => {
-    const now = new Date().toISOString();
+    const now = new Date().toISOString();
     localStorage.setItem("clockInTime", now);
     alert(`Clocked in at ${new Date(now).toLocaleTimeString()}`);
   };
