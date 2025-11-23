@@ -103,7 +103,7 @@ export default function Reporting() {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/worktime/report?start=${start}&end=${end}&empId=${selectedEmployeeId}`
+        `${API_BASE_URL}/api/worktime/report?start=${start}&end=${end}&empId=${selectedEmployeeId}`
       );
 
       const data = await response.json();
